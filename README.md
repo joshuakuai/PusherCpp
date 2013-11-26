@@ -12,24 +12,23 @@ Wait....if you wanna make sure your pem file is right and could work correctly w
 Blog address:http://www.joshuakuai.com/?p=1342
 
 Example:
+```
+Pusher pusher("xxxxxx.pem");
+pusher.isSandBox = true;
 
-#include "Pusher.h"
+vector<string> tokenStringList;
+tokenStringList.push_back("70bd309357cb5ee5c15e63a386d1defe5e1006a10aa949caf833e768c6472deb");
+tokenStringList.push_back("d411103cfac7027894c91c94a03d9e00f081659f689e7af913c5f48d807b8546");
 
-int main(int argc, char *argv[])
-{
-	Pusher pusher("xxxxxx.pem");
-	pusher.isSandBox = true;
+PusherContent content;
+content.badge = 1;
+content.content = "Test_for_pusher!";
+content.sound = "default";
+content.userData = "\"UserData\":123";
 
-	vector<string> tokenStringList;
-	tokenStringList.push_back("70bd309357cb5ee5c15e63a386d1defe5e1006a10aa949caf833e768c6472deb");
-	tokenStringList.push_back("d411103cfac7027894c91c94a03d9e00f081659f689e7af913c5f48d807b8546");
+pusher.pushNotification(content,tokenStringList);
+```
 
-	PusherContent content;
-	content.badge = 1;
-	content.content = "Test_for_pusher!";
-	content.sound = "default";
-	content.userData = "\"UserData\":123";
-
-	pusher.pushNotification(content,tokenStringList);
-	return 0;
-}
+PS:
+1. The userdata must be a json string.
+2. You could uncomment the code in .cpp to see the debug detials.
