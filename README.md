@@ -12,7 +12,7 @@ Wait....if you wanna make sure your pem file is right and could work correctly w
 Blog address:http://www.joshuakuai.com/?p=1342
 
 Example:
-```
+```cpp
 Pusher pusher("xxxxxx.pem");
 pusher.isSandBox = true;
 
@@ -29,6 +29,3 @@ content.userData = "\"UserData\":123";
 pusher.pushNotification(content,tokenStringList);
 ```
 
-PS:
-1. The userdata must be a json string.
-2. You could uncomment the code in .cpp to see the debug detials.
