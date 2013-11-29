@@ -1,9 +1,9 @@
-Pusher
+PusherCpp
 ======
 
-A class implemented by C++ to push notification to iOS Device
+A C++ class to push notification to iOS Device
 
-This class is simple, just get a instance of it, set the pem file name, and push!
+This class is simple to use, just get a instance of it, set the pem file name and the content, and push!
 
 And it helps you to format your content.
 
