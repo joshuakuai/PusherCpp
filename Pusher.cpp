@@ -33,9 +33,16 @@
 Pusher::Pusher(string cerFileName) {
 	_cerFileName = cerFileName;
 	isSandBox = true;
+    _expirationDate = time(NULL) + 86400; // default expiration date set to 1 day
 }
 
 Pusher::~Pusher() {
+}
+
+// Unix epoch date expressed in seconds (UTC) after which no more attempts should be made to deliver a notification. Set to 0 to expire immediately
+void Pusher::setExpirationDate(long expirationDate) {
+    _expirationDate = expirationDate;
+	
 }
 
 int Pusher::charToHex(char value) {
@@ -203,38 +210,48 @@ void Pusher::prepareConnect(string pushContent) {
 	SSL_CTX_free(ctx);
 }
 
-bool Pusher::sendPayload(SSL *sslPtr, char *deviceTokenBinary,
-                         char *payloadBuff, size_t payloadLength) {
-	bool rtn = false;
-	if (sslPtr && deviceTokenBinary && payloadBuff && payloadLength) {
-		uint8_t command = 0; /* command number */
-		char binaryMessageBuff[sizeof(uint8_t) + sizeof(uint16_t)
-                               + DEVICE_BINARY_SIZE + sizeof(uint16_t) + MAXPAYLOAD_SIZE];
+// Source: https://developer.apple.com/library/ios/documentation/NetworkingInternet/Conceptual/RemoteNotificationsPG/Chapters/LegacyFormat.html
+bool Pusher::sendPayload(SSL *sslPtr, char *deviceTokenBinary, char *payloadBuff, size_t payloadLength) {
+    bool rtn = false;
+    if (sslPtr && deviceTokenBinary && payloadBuff && payloadLength) {
+        uint8_t command = 1; /* command number */
+        char binaryMessageBuff[sizeof (uint8_t) + sizeof (uint32_t) + sizeof (uint32_t) + sizeof (uint16_t) +
+                               DEVICE_BINARY_SIZE + sizeof (uint16_t) + MAXPAYLOAD_SIZE];
+        /* message format is, |COMMAND|ID|EXPIRY|TOKENLEN|TOKEN|PAYLOADLEN|PAYLOAD| */
+        char *binaryMessagePt = binaryMessageBuff;
+        uint32_t whicheverOrderIWantToGetBackInAErrorResponse_ID = 1234;
+        uint32_t networkOrderExpiryEpochUTC = htonl(_expirationDate);
+        uint16_t networkOrderTokenLength = htons(DEVICE_BINARY_SIZE);
+        uint16_t networkOrderPayloadLength = htons(payloadLength);
         
-		/* message format is, |COMMAND|TOKENLEN|TOKEN|PAYLOADLEN|PAYLOAD| */
-		char *binaryMessagePt = binaryMessageBuff;
-		uint16_t networkOrderTokenLength = htons(DEVICE_BINARY_SIZE);
-		uint16_t networkOrderPayloadLength = htons(payloadLength);
+        /* command */
+        *binaryMessagePt++ = command;
         
-		/* command */
-		*binaryMessagePt++ = command;
+        /* provider preference ordered ID */
+        memcpy(binaryMessagePt, &whicheverOrderIWantToGetBackInAErrorResponse_ID, sizeof (uint32_t));
+        binaryMessagePt += sizeof (uint32_t);
         
-		/* token length network order */
-		memcpy(binaryMessagePt, &networkOrderTokenLength, sizeof(uint16_t));
-		binaryMessagePt += sizeof(uint16_t);
+        /* expiry date network order */
+        memcpy(binaryMessagePt, &networkOrderExpiryEpochUTC, sizeof (uint32_t));
+        binaryMessagePt += sizeof (uint32_t);
         
-		/* device token */
-		memcpy(binaryMessagePt, deviceTokenBinary, DEVICE_BINARY_SIZE);
-		binaryMessagePt += DEVICE_BINARY_SIZE;
+        /* token length network order */
+        memcpy(binaryMessagePt, &networkOrderTokenLength, sizeof (uint16_t));
+        binaryMessagePt += sizeof (uint16_t);
         
-		/* payload length network order */
-		memcpy(binaryMessagePt, &networkOrderPayloadLength, sizeof(uint16_t));
-		binaryMessagePt += sizeof(uint16_t);
+        /* device token */
+        memcpy(binaryMessagePt, deviceTokenBinary, DEVICE_BINARY_SIZE);
+        binaryMessagePt += DEVICE_BINARY_SIZE;
         
-		/* payload */
-		memcpy(binaryMessagePt, payloadBuff, payloadLength);
-		binaryMessagePt += payloadLength;
-		int result = SSL_write(sslPtr, binaryMessageBuff,
+        /* payload length network order */
+        memcpy(binaryMessagePt, &networkOrderPayloadLength, sizeof (uint16_t));
+        binaryMessagePt += sizeof (uint16_t);
+        
+        /* payload */
+        memcpy(binaryMessagePt, payloadBuff, payloadLength);
+        binaryMessagePt += payloadLength;
+        
+        int result = SSL_write(sslPtr, binaryMessageBuff,
                                (binaryMessagePt - binaryMessageBuff));
 		if (result > 0) {
 			rtn = true;
@@ -243,6 +260,5 @@ bool Pusher::sendPayload(SSL *sslPtr, char *deviceTokenBinary,
 			int errorCode = SSL_get_error(sslPtr, result);
 			cout << "Failed to write in SSL, error code:" << errorCode << endl;
 		}
-	}
-	return rtn;
+    return rtn;
 }
