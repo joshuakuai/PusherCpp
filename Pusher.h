@@ -61,13 +61,13 @@ public:
     
 	bool isSandBox;
     
-    void setExpirationDate(long expirationDate);
+	void setExpirationDate(long expirationDate);
 	void pushNotification(PusherContent pushContent,vector<string> tokenStringList);
     
 private:
 	string _cerFileName;
 	vector<string> tokenStringVector;
-    long _expirationDate;
+    	long _expirationDate;
     
 	string binaryToken(const std::string& input);
 	int charToHex(char value);
