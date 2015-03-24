@@ -7,10 +7,6 @@ This class is simple to use, just get a instance of it, set the pem file name an
 
 And it helps you to format your content.
 
-Wait....if you wanna make sure your pem file is right and could work correctly with this class, please take a few mins to take a look at my blog.
-
-Blog address:http://www.joshuakuai.com/?p=1342
-
 Example:
 ```cpp
 Pusher pusher("xxxxxx.pem");
@@ -27,5 +23,33 @@ content.sound = "default";
 content.userData = "\"UserData\":123";
 
 pusher.pushNotification(content,tokenStringList);
+```
+Before you start to use this class, make sure you've followed these steps and get your pem file ready.
+
+* You need a certificate from Apple, and then double click it to install on your mac.
+
+* Open the Keychain, then find the certificate you just installed.
+
+* Right click that certificate and export it as a p12 file, name it as apns-cert.p12 or whatever you want.
+
+* Export that certificate’s private key as a p12 file, name it as apns-key.p12 or whatever you want.
+
+* Then transfer the both file to .pem file with command below.
+
+   **openssl pkcs12 -clcerts -nokeys -out apns-cert.pem -in apns-cert.p12**
+
+   **openssl pkcs12 -nocerts -out apns-key.pem -in apns-key.p12**
+
+* Remove the password of the key file.
+
+   **openssl rsa -in apns-key.pem -out apns-key-noenc.pem**
+
+* Finally, clue them together.
+
+   **cat apns-cert.pem apns-key-noenc.pem > apns-dev.pem**
+
+* This class only support the token without space, you could use code below to get the token in iOS client.
+```
+NSString *hexString = [[[[deviceToken description] stringByReplacingOccurrencesOfString:@”<” withString:@””] stringByReplacingOccurrencesOfString:@”>” withString:@””]stringByReplacingOccurrencesOfString:@” ” withString:@””];
 ```
 
