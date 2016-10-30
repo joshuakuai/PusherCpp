@@ -122,7 +122,7 @@ void Pusher::prepareConnect(string pushContent) {
     
 	SSLeay_add_ssl_algorithms();
 	SSL_load_error_strings();
-	ctx = SSL_CTX_new(SSLv3_method());
+	ctx = SSL_CTX_new(TLSv1_method());
 	if (!ctx) {
 		printf("SSL_CTX_new()...failed\n");
 		exit(1);
@@ -260,5 +260,6 @@ bool Pusher::sendPayload(SSL *sslPtr, char *deviceTokenBinary, char *payloadBuff
 			int errorCode = SSL_get_error(sslPtr, result);
 			cout << "Failed to write in SSL, error code:" << errorCode << endl;
 		}
+    }
     return rtn;
 }
